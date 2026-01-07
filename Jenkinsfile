@@ -49,7 +49,7 @@ pipeline {
         stage('Build Application') {
             steps {
                 echo "Quality Gate passed — building application"
-                sh "mvn clean package"
+                sh "cd sample-app && mvn clean package"
             }
         }
 
