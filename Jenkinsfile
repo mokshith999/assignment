@@ -32,7 +32,7 @@ pipeline {
                     sh """
                         ${SONAR_SCANNER}/bin/sonar-scanner \
                         -Dsonar.projectKey=jenkins \
-                        -Dsonar.sources=src
+                        -Dsonar.sources=.
                     """
                 }
             }
