@@ -1,6 +1,10 @@
 pipeline {
     agent any
 
+    tools {
+        jdk 'jdk17'   // Use the JDK 17 you installed in Jenkins
+    }
+
     triggers {
         githubPush()
     }
@@ -55,7 +59,7 @@ pipeline {
 
         stage('Archive Artifacts') {
             steps {
-                archiveArtifacts artifacts: 'target/*.jar', fingerprint: true
+                archiveArtifacts artifacts: 'sample-app/target/*.war', fingerprint: true
             }
         }
     }
