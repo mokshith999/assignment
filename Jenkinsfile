@@ -2,25 +2,27 @@ pipeline {
     agent any
 
     tools {
-        jdk 'jdk17'   // Use the JDK 17 you installed in Jenkins
+        jdk 'jdk17'
     }
 
     triggers {
-        githubPush()
+        githubPush()   // Triggered by GitHub webhook
     }
 
     environment {
         SONAR_SCANNER = tool 'sonar-scanner'
+        ARTIFACTORY_SERVER = 'artifactory'   // Name configured in Jenkins > Manage Credentials
+        ARTIFACTORY_REPO = 'libs-release-local'
     }
 
     stages {
 
         stage('Validate Branch') {
             when {
-                expression { return env.GIT_BRANCH ==~ /.*name\.developer.*/ }
+                expression { return env.BRANCH_NAME ==~ /.*name\.developer.*/ }
             }
             steps {
-                echo "Branch matches name.developer — proceeding"
+                echo "Branch matches name.developer — pipeline will run"
             }
         }
 
@@ -36,7 +38,9 @@ pipeline {
                     sh """
                         ${SONAR_SCANNER}/bin/sonar-scanner \
                         -Dsonar.projectKey=jenkins \
-                        -Dsonar.sources=.
+                        -Dsonar.sources=. \
+                        -Dsonar.java.binaries=sample-app/target \
+                        -Dsonar.host.url=$SONAR_HOST_URL
                     """
                 }
             }
@@ -57,6 +61,23 @@ pipeline {
             }
         }
 
+        stage('Upload to Artifactory') {
+            steps {
+                script {
+                    def server = Artifactory.server(ARTIFACTORY_SERVER)
+                    def uploadSpec = """{
+                        "files": [
+                            {
+                                "pattern": "sample-app/target/*.war",
+                                "target": "${ARTIFACTORY_REPO}/"
+                            }
+                        ]
+                    }"""
+                    server.upload(uploadSpec)
+                }
+            }
+        }
+
         stage('Archive Artifacts') {
             steps {
                 archiveArtifacts artifacts: 'sample-app/target/*.war', fingerprint: true
@@ -64,4 +85,5 @@ pipeline {
         }
     }
 }
+
 
