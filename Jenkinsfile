@@ -39,7 +39,7 @@ pipeline {
                         ${SONAR_SCANNER}/bin/sonar-scanner \
                         -Dsonar.projectKey=jenkins \
                         -Dsonar.sources=. \
-                        -Dsonar.java.binaries=.
+                        -Dsonar.java.binaries=. \
                         -Dsonar.host.url=$SONAR_HOST_URL
                     """
                 }
