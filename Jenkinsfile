@@ -13,6 +13,7 @@ pipeline {
         SONAR_SCANNER = tool 'sonar-scanner'
         ARTIFACTORY_SERVER = 'artifactory'
         ARTIFACTORY_REPO = 'libs-release-local'
+        DEV_NAME = "${env.BRANCH_NAME.split('\\.')[1]}"
     }
 
     stages {
@@ -69,7 +70,7 @@ pipeline {
                         "files": [
                             {
                                 "pattern": "sample-app/target/*.war",
-                                "target": "${ARTIFACTORY_REPO}/${BUILD_NUMBER}/"
+                                "target": "${ARTIFACTORY_REPO}/${DEV_NAME}/${BUILD_NUMBER}/"
                             }
                         ]
                     }"""
