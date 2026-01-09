@@ -6,12 +6,12 @@ pipeline {
     }
 
     triggers {
-        githubPush()   // Triggered by GitHub webhook
+        githubPush()
     }
 
     environment {
         SONAR_SCANNER = tool 'sonar-scanner'
-        ARTIFACTORY_SERVER = 'artifactory'   // Name configured in Jenkins > Manage Credentials
+        ARTIFACTORY_SERVER = 'artifactory'
         ARTIFACTORY_REPO = 'libs-release-local'
     }
 
@@ -69,7 +69,7 @@ pipeline {
                         "files": [
                             {
                                 "pattern": "sample-app/target/*.war",
-                                "target": "libs-release-local/sample-app/"
+                                "target": "${ARTIFACTORY_REPO}/"
                             }
                         ]
                     }"""
@@ -85,5 +85,6 @@ pipeline {
         }
     }
 }
+
 
 
