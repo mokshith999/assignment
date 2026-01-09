@@ -69,7 +69,7 @@ pipeline {
                         "files": [
                             {
                                 "pattern": "sample-app/target/*.war",
-                                "target": "${ARTIFACTORY_REPO}/sample-app/"
+                                "target": "libs-release-local/sample-app/"
                             }
                         ]
                     }"""
