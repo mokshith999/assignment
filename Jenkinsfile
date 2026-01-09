@@ -19,14 +19,15 @@ pipeline {
 
         stage('Validate Branch') {
             when {
-                expression { return env.BRANCH_NAME ==~ /.*name\.developer.*/ }
+                expression { return env.BRANCH_NAME ==~ /.*developer.*/ }
             }
             steps {
                 script {
-                    echo "Branch matches name.developer — pipeline will run"
+                    echo "Branch matches developer pattern — pipeline will run"
 
                     // Extract developer name safely
-                    env.DEV_NAME = env.BRANCH_NAME.split('\\.')[1]
+                    // Example branch: mokshith.developer → DEV_NAME = mokshith
+                    env.DEV_NAME = env.BRANCH_NAME.split('\\.')[0]
                     echo "Developer Name: ${env.DEV_NAME}"
                 }
             }
@@ -72,7 +73,7 @@ pipeline {
                 script {
                     def server = Artifactory.server(ARTIFACTORY_SERVER)
 
-                    // Build upload spec as Groovy map (safe)
+                    // Build upload spec as Groovy map (correct format)
                     def uploadSpec = [
                         files: [
                             [
@@ -82,6 +83,7 @@ pipeline {
                         ]
                     ]
 
+                    echo "Uploading to: ${ARTIFACTORY_REPO}/${env.DEV_NAME}/${env.BUILD_NUMBER}/"
                     server.upload(uploadSpec)
                 }
             }
