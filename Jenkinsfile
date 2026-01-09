@@ -69,7 +69,7 @@ pipeline {
                         "files": [
                             {
                                 "pattern": "sample-app/target/*.war",
-                                "target": "${ARTIFACTORY_REPO}/"
+                                "target": "${ARTIFACTORY_REPO}/${BUILD_NUMBER}/"
                             }
                         ]
                     }"""
