@@ -20,7 +20,6 @@ pipeline {
         stage('Extract Developer Name') {
             steps {
                 script {
-                    // Example: mokshith.developer → mokshith
                     env.DEV_NAME = env.BRANCH_NAME.split('\\.')[0]
                     echo "Developer Name: ${env.DEV_NAME}"
                 }
@@ -66,17 +65,13 @@ pipeline {
                 script {
                     def server = Artifactory.server(ARTIFACTORY_SERVER)
 
-                    // Build spec using JSON (safe for Artifactory plugin)
-                    def uploadSpec = readJSON text: """
-                    {
-                        "files": [
-                            {
-                                "pattern": "sample-app/target/*.war",
-                                "target": "${ARTIFACTORY_REPO}/${env.DEV_NAME}/${env.BUILD_NUMBER}/"
-                            }
-                        ]
-                    }
-                    """
+                    // Build JSON spec as a raw string (required by Artifactory plugin)
+                    def uploadSpec =
+                        '{ "files": [' +
+                        '{ "pattern": "sample-app/target/*.war",' +
+                        '  "target": "' + ARTIFACTORY_REPO + '/' + env.DEV_NAME + '/' + env.BUILD_NUMBER + '/"' +
+                        '}' +
+                        '] }'
 
                     echo "Uploading to: ${ARTIFACTORY_REPO}/${env.DEV_NAME}/${env.BUILD_NUMBER}/"
 
