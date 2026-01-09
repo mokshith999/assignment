@@ -17,16 +17,10 @@ pipeline {
 
     stages {
 
-        stage('Validate Branch') {
-            when {
-                expression { return env.BRANCH_NAME ==~ /.*developer.*/ }
-            }
+        stage('Extract Developer Name') {
             steps {
                 script {
-                    echo "Branch matches developer pattern — pipeline will run"
-
-                    // Extract developer name safely
-                    // Example branch: mokshith.developer → DEV_NAME = mokshith
+                    // Example: mokshith.developer → mokshith
                     env.DEV_NAME = env.BRANCH_NAME.split('\\.')[0]
                     echo "Developer Name: ${env.DEV_NAME}"
                 }
@@ -63,7 +57,6 @@ pipeline {
 
         stage('Build Application') {
             steps {
-                echo "Quality Gate passed — building application"
                 sh "cd sample-app && mvn clean package"
             }
         }
@@ -73,17 +66,20 @@ pipeline {
                 script {
                     def server = Artifactory.server(ARTIFACTORY_SERVER)
 
-                    // Build upload spec as Groovy map (correct format)
-                    def uploadSpec = [
-                        files: [
-                            [
-                                pattern: "sample-app/target/*.war",
-                                target: "${ARTIFACTORY_REPO}/${env.DEV_NAME}/${env.BUILD_NUMBER}/"
-                            ]
+                    // Build spec using JSON (safe for Artifactory plugin)
+                    def uploadSpec = readJSON text: """
+                    {
+                        "files": [
+                            {
+                                "pattern": "sample-app/target/*.war",
+                                "target": "${ARTIFACTORY_REPO}/${env.DEV_NAME}/${env.BUILD_NUMBER}/"
+                            }
                         ]
-                    ]
+                    }
+                    """
 
                     echo "Uploading to: ${ARTIFACTORY_REPO}/${env.DEV_NAME}/${env.BUILD_NUMBER}/"
+
                     server.upload(uploadSpec)
                 }
             }
