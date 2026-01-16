@@ -15,18 +15,22 @@ pipeline {
 
         stage('Build') {
             steps {
-                sh 'mvn clean package'
+                dir('sample-app') {
+                    sh 'mvn clean package'
+                }
             }
         }
 
         stage('SonarQube Analysis') {
             steps {
-                withSonarQubeEnv("${SONARQUBE_ENV}") {
-                    sh """
-                        mvn sonar:sonar \
-                        -Dsonar.projectKey=jenkins \
-                        -Dsonar.projectName=jenkins
-                    """
+                dir('sample-app') {
+                    withSonarQubeEnv("${SONARQUBE_ENV}") {
+                        sh """
+                            mvn sonar:sonar \
+                            -Dsonar.projectKey=jenkins \
+                            -Dsonar.projectName=jenkins
+                        """
+                    }
                 }
             }
         }
@@ -46,5 +50,3 @@ pipeline {
         }
     }
 }
-
-
