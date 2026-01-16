@@ -35,16 +35,25 @@ pipeline {
                             script {
                                 def server = Artifactory.server('artifactory')
 
+                                // Create Build Info object
+                                def buildInfo = Artifactory.newBuildInfo()
+                                buildInfo.env.capture = true
+
+                                // Upload to your "pipeline" repo
                                 def uploadSpec = """{
                                   "files": [
                                     {
                                       "pattern": "target/*.jar",
-                                      "target": "my-repo/sample-app/"
+                                      "target": "pipeline/sample-app/"
                                     }
                                   ]
                                 }"""
 
-                                server.upload(spec: uploadSpec)
+                                // Attach upload to build info
+                                server.upload(spec: uploadSpec, buildInfo: buildInfo)
+
+                                // Publish build info so it appears in JFrog
+                                server.publishBuildInfo(buildInfo)
                             }
                         }
                     }
@@ -79,8 +88,3 @@ pipeline {
     }
 
     post {
-        always {
-            echo "Pipeline completed"
-        }
-    }
-}
