@@ -20,15 +20,13 @@ pipeline {
 
         stage('Build') {
             steps {
-                dir('sample-app') {
-                    sh 'mvn clean package'
-                }
+               sh "cd sample-app && mvn clean package"
             }
         }
 
         stage('SonarQube Analysis') {
             steps {
-                dir('sample-app') {
+                sh "cd sample-app"
                     withSonarQubeEnv('sonarqube') {
                         sh """
                             ${SONAR_SCANNER}/bin/sonar-scanner \
@@ -38,7 +36,6 @@ pipeline {
                             -Dsonar.host.url=$SONAR_HOST_URL \
                             -Dsonar.login=$SONAR_AUTH_TOKEN
                         """
-                    }
                 }
             }
         }
