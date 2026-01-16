@@ -28,11 +28,13 @@ pipeline {
         stage('SonarQube Analysis') {
             steps {
                 dir('sample-app') {
-                    withSonarQubeEnv("${SONARQUBE_ENV}") {
+                    withSonarQubeEnv('sonarqube') {
                         sh """
-                            mvn sonar:sonar \
+                            ${SONAR_SCANNER}/bin/sonar-scanner \
                             -Dsonar.projectKey=jenkins \
-                            -Dsonar.projectName=jenkins
+                            -Dsonar.sources=src/main/java \
+                            -Dsonar.java.binaries=target/classes \
+                            -Dsonar.host.url=$SONAR_HOST_URL
                         """
                     }
                 }
