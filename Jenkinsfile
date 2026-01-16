@@ -7,6 +7,7 @@ pipeline {
 
     environment {
         SONARQUBE_ENV = 'sonarqube'
+        SONAR_SCANNER = tool 'sonar-scanner'
     }
 
     stages {
@@ -34,7 +35,8 @@ pipeline {
                             -Dsonar.projectKey=jenkins \
                             -Dsonar.sources=src/main/java \
                             -Dsonar.java.binaries=target/classes \
-                            -Dsonar.host.url=$SONAR_HOST_URL
+                            -Dsonar.host.url=$SONAR_HOST_URL \
+                            -Dsonar.login=$SONAR_AUTH_TOKEN
                         """
                     }
                 }
@@ -56,4 +58,3 @@ pipeline {
         }
     }
 }
-
