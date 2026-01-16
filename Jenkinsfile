@@ -26,18 +26,44 @@ pipeline {
             }
         }
 
-        stage('SonarQube Analysis') {
-            steps {
-                dir('sample-app') {
-                    withSonarQubeEnv('sonarqube') {
-                        sh """
-                            ${SONAR_SCANNER}/bin/sonar-scanner \
-                            -Dsonar.projectKey=jenkins \
-                            -Dsonar.sources=src/main/java \
-                            -Dsonar.java.binaries=target/classes \
-                            -Dsonar.host.url=$SONAR_HOST_URL \
-                            -Dsonar.token=$SONAR_AUTH_TOKEN
-                        """
+        stage('Upload & Sonar in Parallel') {
+            parallel {
+
+                stage('Upload to Artifactory') {
+                    steps {
+                        dir('sample-app') {
+                            script {
+                                def server = Artifactory.server('artifactory')
+
+                                def uploadSpec = """{
+                                  "files": [
+                                    {
+                                      "pattern": "target/*.jar",
+                                      "target": "my-repo/sample-app/"
+                                    }
+                                  ]
+                                }"""
+
+                                server.upload(spec: uploadSpec)
+                            }
+                        }
+                    }
+                }
+
+                stage('SonarQube Analysis') {
+                    steps {
+                        dir('sample-app') {
+                            withSonarQubeEnv('sonarqube') {
+                                sh """
+                                    ${SONAR_SCANNER}/bin/sonar-scanner \
+                                    -Dsonar.projectKey=jenkins \
+                                    -Dsonar.sources=src/main/java \
+                                    -Dsonar.java.binaries=target/classes \
+                                    -Dsonar.host.url=$SONAR_HOST_URL \
+                                    -Dsonar.token=$SONAR_AUTH_TOKEN
+                                """
+                            }
+                        }
                     }
                 }
             }
@@ -58,4 +84,3 @@ pipeline {
         }
     }
 }
-
