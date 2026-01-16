@@ -20,13 +20,15 @@ pipeline {
 
         stage('Build') {
             steps {
-               sh "cd sample-app && mvn clean package"
+                dir('sample-app') {
+                    sh 'mvn clean package'
+                }
             }
         }
 
         stage('SonarQube Analysis') {
             steps {
-                sh "cd sample-app"
+                dir('sample-app') {
                     withSonarQubeEnv('sonarqube') {
                         sh """
                             ${SONAR_SCANNER}/bin/sonar-scanner \
@@ -34,8 +36,9 @@ pipeline {
                             -Dsonar.sources=src/main/java \
                             -Dsonar.java.binaries=target/classes \
                             -Dsonar.host.url=$SONAR_HOST_URL \
-                            -Dsonar.login=$SONAR_AUTH_TOKEN
+                            -Dsonar.token=$SONAR_AUTH_TOKEN
                         """
+                    }
                 }
             }
         }
@@ -55,3 +58,4 @@ pipeline {
         }
     }
 }
+
