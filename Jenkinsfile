@@ -35,24 +35,21 @@ pipeline {
                             script {
                                 def server = Artifactory.server('artifactory')
 
-                                // Create Build Info object
+                                // Build Info object
                                 def buildInfo = Artifactory.newBuildInfo()
                                 buildInfo.env.capture = true
 
-                                // Upload to your "pipeline" repo
+                                // Upload WAR instead of JAR
                                 def uploadSpec = """{
                                   "files": [
                                     {
-                                      "pattern": "target/*.jar",
+                                      "pattern": "target/*.war",
                                       "target": "pipeline/sample-app/"
                                     }
                                   ]
                                 }"""
 
-                                // Attach upload to build info
                                 server.upload(spec: uploadSpec, buildInfo: buildInfo)
-
-                                // Publish build info so it appears in JFrog
                                 server.publishBuildInfo(buildInfo)
                             }
                         }
