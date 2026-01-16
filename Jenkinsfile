@@ -5,26 +5,12 @@ pipeline {
         jdk 'jdk17'
     }
 
-    triggers {
-        githubPush()
-    }
-
     environment {
+        SONARQUBE_ENV = 'sonarqube'
         SONAR_SCANNER = tool 'sonar-scanner'
-        ARTIFACTORY_SERVER = 'artifactory'
-        ARTIFACTORY_REPO = 'libs-release-local'
     }
 
     stages {
-
-        stage('Extract Developer Name') {
-            steps {
-                script {
-                    env.DEV_NAME = env.BRANCH_NAME.split('\\.')[0]
-                    echo "Developer Name: ${env.DEV_NAME}"
-                }
-            }
-        }
 
         stage('Checkout') {
             steps {
@@ -32,58 +18,70 @@ pipeline {
             }
         }
 
-        stage('SonarQube Analysis') {
+        stage('Build') {
             steps {
-                withSonarQubeEnv('sonarqube') {
-                    sh """
-                        ${SONAR_SCANNER}/bin/sonar-scanner \
-                        -Dsonar.projectKey=jenkins \
-                        -Dsonar.sources=. \
-                        -Dsonar.java.binaries=. \
-                        -Dsonar.host.url=$SONAR_HOST_URL
-                    """
+                dir('sample-app') {
+                    sh 'mvn clean package'
+                }
+            }
+        }
+
+        stage('Upload & Sonar in Parallel') {
+            parallel {
+
+                stage('Upload to Artifactory') {
+                    steps {
+                        dir('sample-app') {
+                            script {
+                                def server = Artifactory.server('artifactory')
+
+                                def uploadSpec = """{
+                                  "files": [
+                                    {
+                                      "pattern": "target/*.jar",
+                                      "target": "my-repo/sample-app/"
+                                    }
+                                  ]
+                                }"""
+
+                                server.upload(spec: uploadSpec)
+                            }
+                        }
+                    }
+                }
+
+                stage('SonarQube Analysis') {
+                    steps {
+                        dir('sample-app') {
+                            withSonarQubeEnv('sonarqube') {
+                                sh """
+                                    ${SONAR_SCANNER}/bin/sonar-scanner \
+                                    -Dsonar.projectKey=jenkins \
+                                    -Dsonar.sources=src/main/java \
+                                    -Dsonar.java.binaries=target/classes \
+                                    -Dsonar.host.url=$SONAR_HOST_URL \
+                                    -Dsonar.token=$SONAR_AUTH_TOKEN
+                                """
+                            }
+                        }
+                    }
                 }
             }
         }
 
         stage('Quality Gate') {
             steps {
-                timeout(time: 5, unit: 'MINUTES') {
+                timeout(time: 2, unit: 'MINUTES') {
                     waitForQualityGate abortPipeline: true
                 }
             }
         }
+    }
 
-        stage('Build Application') {
-            steps {
-                sh "cd sample-app && mvn clean package"
-            }
-        }
-
-        stage('Upload to Artifactory') {
-            steps {
-                script {
-                    def server = Artifactory.server(ARTIFACTORY_SERVER)
-
-                    // Build JSON spec as a raw string (required by Artifactory plugin)
-                    def uploadSpec =
-                        '{ "files": [' +
-                        '{ "pattern": "sample-app/target/*.war",' +
-                        '  "target": "' + ARTIFACTORY_REPO + '/' + env.DEV_NAME + '/' + env.BUILD_NUMBER + '/"' +
-                        '}' +
-                        '] }'
-
-                    echo "Uploading to: ${ARTIFACTORY_REPO}/${env.DEV_NAME}/${env.BUILD_NUMBER}/"
-
-                    server.upload(uploadSpec)
-                }
-            }
-        }
-
-        stage('Archive Artifacts') {
-            steps {
-                archiveArtifacts artifacts: 'sample-app/target/*.war', fingerprint: true
-            }
+    post {
+        always {
+            echo "Pipeline completed"
         }
     }
 }
+
