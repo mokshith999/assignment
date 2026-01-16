@@ -1,6 +1,10 @@
 pipeline {
     agent any
 
+    tools {
+        jdk 'jdk17'
+    }
+
     environment {
         SONARQUBE_ENV = 'sonarqube'
     }
@@ -50,3 +54,4 @@ pipeline {
         }
     }
 }
+
