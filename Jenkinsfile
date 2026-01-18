@@ -30,23 +30,20 @@ pipeline {
             parallel {
 
                 /* -------------------------------
-                   JFrog Upload (via curl)
+                   JFrog Upload (Token-based)
                 -------------------------------- */
                 stage('Upload to JFrog') {
                     steps {
                         withCredentials([
-                            usernamePassword(
-                                credentialsId: 'jfrog-creds',
-                                usernameVariable: 'JFROG_USER',
-                                passwordVariable: 'JFROG_PASS'
-                            )
+                            string(credentialsId: 'jfrog-token', variable: 'JFROG_TOKEN')
                         ]) {
                             sh '''
                                 echo "Uploading WAR to JFrog..."
 
                                 WAR_FILE=$(ls sample-app/target/*.war)
 
-                                curl --fail -u "$JFROG_USER:$JFROG_PASS" \
+                                curl --fail \
+                                     -H "Authorization: Bearer $JFROG_TOKEN" \
                                      -T "$WAR_FILE" \
                                      "https://trial9krpxa.jfrog.io/artifactory/pipeline/${JOB_NAME}-${BUILD_NUMBER}-sample.war"
                             '''
