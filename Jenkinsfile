@@ -26,47 +26,37 @@ pipeline {
             }
         }
 
-        /* -------------------------------
-           FIX #1: Initialize Artifactory 
-           BEFORE entering the parallel block
-        -------------------------------- */
-        stage('Init Artifactory') {
-            steps {
-                script {
-                    echo "Initializing Artifactory plugin context"
-                    Artifactory.server('Artifactory')
-                }
-            }
-        }
-
         stage('Upload & Sonar in Parallel') {
             parallel {
 
-                stage('Upload to Artifactory') {
+                /* -------------------------------
+                   JFrog Upload (via curl)
+                -------------------------------- */
+                stage('Upload to JFrog') {
                     steps {
-                        dir('sample-app') {
-                            script {
-                                def server = Artifactory.server('Artifactory')
+                        withCredentials([
+                            usernamePassword(
+                                credentialsId: 'jfrog-creds',
+                                usernameVariable: 'JFROG_USER',
+                                passwordVariable: 'JFROG_PASS'
+                            )
+                        ]) {
+                            sh '''
+                                echo "Uploading WAR to JFrog..."
 
-                                def buildInfo = Artifactory.newBuildInfo()
-                                buildInfo.env.capture = true
+                                WAR_FILE=$(ls sample-app/target/*.war)
 
-                                def uploadSpec = """{
-                                  "files": [
-                                    {
-                                      "pattern": "target/*.war",
-                                      "target": "pipeline/sample-app/"
-                                    }
-                                  ]
-                                }"""
-
-                                server.upload(spec: uploadSpec, buildInfo: buildInfo)
-                                server.publishBuildInfo(buildInfo)
-                            }
+                                curl --fail -u "$JFROG_USER:$JFROG_PASS" \
+                                     -T "$WAR_FILE" \
+                                     "https://trial9krpxa.jfrog.io/artifactory/pipeline/${JOB_NAME}-${BUILD_NUMBER}-sample.war"
+                            '''
                         }
                     }
                 }
 
+                /* -------------------------------
+                   SonarQube Analysis
+                -------------------------------- */
                 stage('SonarQube Analysis') {
                     steps {
                         dir('sample-app') {
@@ -101,3 +91,4 @@ pipeline {
         }
     }
 }
+
