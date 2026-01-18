@@ -26,6 +26,19 @@ pipeline {
             }
         }
 
+        /* -------------------------------
+           FIX #1: Initialize Artifactory 
+           BEFORE entering the parallel block
+        -------------------------------- */
+        stage('Init Artifactory') {
+            steps {
+                script {
+                    echo "Initializing Artifactory plugin context"
+                    Artifactory.server('Artifactory')
+                }
+            }
+        }
+
         stage('Upload & Sonar in Parallel') {
             parallel {
 
@@ -35,11 +48,9 @@ pipeline {
                             script {
                                 def server = Artifactory.server('Artifactory')
 
-                                // Build Info object
                                 def buildInfo = Artifactory.newBuildInfo()
                                 buildInfo.env.capture = true
 
-                                // Upload WAR instead of JAR
                                 def uploadSpec = """{
                                   "files": [
                                     {
