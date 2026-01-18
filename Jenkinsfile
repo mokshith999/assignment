@@ -33,7 +33,7 @@ pipeline {
                     steps {
                         dir('sample-app') {
                             script {
-                                def server = Artifactory.server('artifactory')
+                                def server = Artifactory.server('Artifactory')
 
                                 // Build Info object
                                 def buildInfo = Artifactory.newBuildInfo()
