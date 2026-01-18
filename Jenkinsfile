@@ -30,22 +30,25 @@ pipeline {
             parallel {
 
                 /* -------------------------------
-                   JFrog Upload (Token-based)
+                   JFrog Upload (Self-hosted)
                 -------------------------------- */
                 stage('Upload to JFrog') {
                     steps {
                         withCredentials([
-                            string(credentialsId: 'jfrog-token', variable: 'JFROG_TOKEN')
+                            usernamePassword(
+                                credentialsId: 'jfrog-creds',
+                                usernameVariable: 'JFROG_USER',
+                                passwordVariable: 'JFROG_PASS'
+                            )
                         ]) {
                             sh '''
                                 echo "Uploading WAR to JFrog..."
 
                                 WAR_FILE=$(ls sample-app/target/*.war)
 
-                                curl --fail \
-                                     -H "Authorization: Bearer $JFROG_TOKEN" \
+                                curl --fail -u "$JFROG_USER:$JFROG_PASS" \
                                      -T "$WAR_FILE" \
-                                     "https://trial9krpxa.jfrog.io/artifactory/pipeline/${JOB_NAME}-${BUILD_NUMBER}-sample.war"
+                                     "http://16.171.145.173:8081/artifactory/pipeline/${JOB_NAME}-${BUILD_NUMBER}-sample.war"
                             '''
                         }
                     }
